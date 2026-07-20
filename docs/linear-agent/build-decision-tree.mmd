@@ -1,0 +1,37 @@
+flowchart TD
+    Start(["Implement orchestrator-prompt v2.1 in Relevance"]) --> ArchQ{"Does any part of this need to run without a human conversation in the loop?"}
+
+    ArchQ -- "No — one continuous conversation (search, draft, edit, commit)" --> SingleAgent["Build as ONE agent, not a workforce"]
+    ArchQ -- "Yes — e.g. a future nightly duplicate-scan job" --> Workforce["Workforce graph — deferred, not MVP"]
+
+    SingleAgent --> ToolQ{"For each Linear operation the agent needs..."}
+
+    ToolQ -- "Read-only: search / get / list" --> ReadTool["Build tool — action_behaviour: never-ask"]
+    ToolQ -- "Creates or modifies data: issue / project / comment / relation" --> WriteTool["Build tool — action_behaviour: always-ask"]
+    ToolQ -- "Workflow config / teams / labels / admin" --> NoTool["Do NOT build this tool — enforced by omission, not a prompt rule"]
+
+    ReadTool --> Settings
+    WriteTool --> Settings
+    NoTool --> Settings
+
+    Settings["Agent settings: thinking_tool on for self-check; autonomy_limit + ask-for-approval; Knowledge Set = workspace notes; memory deferred"] --> Pills["Two-pass wiring: attach tools, fetch action ids, weave action-id pills into the prompt"]
+
+    Pills --> EvalQ{"Eval test set — search-before-draft, answer-only, decider-required, duplicate-surfaced — pass rate meets threshold?"}
+
+    EvalQ -- "No" --> Iterate["Iterate prompt / tool descriptions"] --> EvalQ
+    EvalQ -- "Yes" --> Gate["Link test set as publish gate"] --> Publish["Publish agent"]
+
+    Publish --> ChatQ{"Which chat surface for the pilot?"}
+
+    ChatQ -- "Native Relevance chat link — recommended, zero setup" --> Pilot["Pilot with a small group"]
+    ChatQ -- "Slack or Teams" --> OAuthTrig["Connect OAuth account + create trigger"] --> Pilot
+
+    Pilot --> Dash["Create performance dashboard — sample_rate ~0.1-0.2, review weekly"]
+
+    Dash --> HealthQ{"Healthy signals? Edit rate neither ~0% nor ~100%; duplicates get caught; no invented owners or dates"}
+
+    HealthQ -- "No" --> Tighten["Tighten prompt / tool descriptions, add a regression eval case"] --> Dash
+    HealthQ -- "Yes" --> ExpandQ{"Ready to expand rollout?"}
+
+    ExpandQ -- "Not yet" --> Hold["Hold at pilot, keep monitoring"] --> Dash
+    ExpandQ -- "Yes" --> Expand["Expand rollout: add conditional_approval_rules for size-scaled ceremony; add Teams/Slack trigger if not already connected"]
