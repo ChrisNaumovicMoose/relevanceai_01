@@ -42,6 +42,63 @@ protect.
 
 ## Tool surface — the actual enforcement layer
 
+### Open question first: remote MCP vs. custom tools
+
+Linear ships its own official hosted remote MCP server
+(`https://mcp.linear.app/mcp`, OAuth-based — [Linear's MCP docs](https://linear.app/docs/mcp)).
+This Claude Code session has a Linear MCP connection itself (the `mcp__Linear__*`
+tools visible throughout this conversation — list_issues, get_issue, save_issue,
+save_comment, save_project, list_teams, and more), almost certainly backed by
+that same official server. Relevance agents can connect to any remote MCP
+server too, via a `remote_mcp_configs` field that enables a phantom tool called
+`mcp_remote_tool_call` — so in principle, the agent we're building could get
+Linear's whole official toolset for free instead of anyone hand-building the
+tools listed below.
+
+Two things stand in the way of just doing that:
+
+1. **`remote_mcp_configs` is a blocked field** — it can't be set via
+   `relevance_update_agent`/`relevance_create_agent` (the API this plan uses
+   throughout). It's dashboard-only, so this is a step a human has to do in
+   the Relevance UI; it can't be scripted end-to-end the way the rest of this
+   plan is.
+2. **Unconfirmed: does it preserve per-operation permissioning?** This whole
+   plan's actual safety mechanism (Finding 2) is that reads and writes get
+   different `action_behaviour` settings, and admin operations aren't attached
+   at all. That works because each hand-built tool below is its own Relevance
+   action with its own permission. A remote MCP connection may or may not
+   expose that same granularity — if Linear's whole MCP surface shows up as
+   one `mcp_remote_tool_call` action with a single `action_behaviour`, then
+   connecting it wholesale means either every write goes through unchecked
+   (never-ask covering creates too) or every read requires approval too
+   (dead weight on the one thing that was supposed to be frictionless). Not
+   verified either way yet.
+
+**Before building anything, verify this empirically rather than guess:** add
+the Linear remote MCP connection to a throwaway test agent in the Garage_56
+dashboard (Agent settings → remote MCP / integrations → server URL
+`https://mcp.linear.app/mcp`, then the OAuth prompt), and then call
+`relevance_get_agent_tools` on that test agent — it'll show whether Linear's
+operations land as one bundled action or many individually-addressable ones.
+That one check decides the shape of everything below:
+
+- **If individually addressable:** skip building custom tools entirely, wire
+  the review/write split via `action_behaviour` per remote-MCP action instead.
+- **If bundled into one action:** a clean middle path is to use the remote MCP
+  connection for reads only (bundling is harmless there — everything's
+  `never-ask` anyway) and hand-build only the four write tools below, where
+  granular `always-ask` gating is the point. That halves the build effort
+  versus building all eight from scratch, while keeping the safety property
+  that actually matters.
+- **If neither works cleanly:** fall back to the original plan — build all
+  eight as custom tools. The Linear MCP tool schemas visible in this session
+  (`save_issue`, `save_comment`, `save_project`, `list_issues`, etc.) are now a
+  verified reference for exactly what fields and behavior to replicate,
+  instead of reverse-engineering Linear's GraphQL schema from scratch.
+
+The rest of this section describes the fallback (fully custom) version; treat
+it as provisional until the dashboard check above resolves which path we're on.
+
 Per Finding 2: least-privilege tool scoping is the mechanism-level version of
 several v1/v2.2 prose rules. Build these as custom tools (Settings →
 `relevance_create_tool` / `relevance_create_tool_from_transformation`, backed
