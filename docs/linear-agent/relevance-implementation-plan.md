@@ -42,6 +42,62 @@ protect.
 
 ## Tool surface — the actual enforcement layer
 
+### Existing agent found in Garage_56: "Linear Assistant" — mine it, don't reuse it live
+
+There's already a **"Linear Assistant"** agent in this project
+(`044e8790-9bd9-4629-91d6-f7c29eea4b50`, published, no evals or dashboard).
+Inspected it directly: `claude-sonnet-4-6`, temp 0, one attached tool called
+"Linear (API key) API Call" set to `action_behaviour: never-ask`. That tool is
+a generic "make an authorized POST to Linear's GraphQL endpoint" wrapper — the
+model writes the raw query or mutation itself. The agent's ~8,200-character
+system prompt (fetching the full config returns 900K+ characters because
+`{{linear_docs}}` and `{{linear_schema}}` — the entire Linear API docs and
+GraphQL schema — are substituted in at runtime) is genuinely well-tuned: it
+has hard-won, tested patterns for exactly the operations this plan needs —
+`teamId` is required for `issueCreate` and has to be fetched via the project's
+`teams` connection first, issue keys (`CHA-558`) must be resolved to internal
+UUIDs before any mutation, Linear's priority field is an integer 0–4 (2 =
+High, not 1), cycle selection means comparing dates against `startsAt`/`endsAt`
+since the API doesn't return "the current one," and a documented list of
+GraphQL schema gotchas (`teams` not `team` on a project, don't filter
+`ProjectMilestone` by `project`, etc.).
+
+**Why it can't just be wired in — as a workforce subagent or merged straight
+into the orchestrator — for the write path:** it has exactly one tool, and
+that tool is generic. Relevance's `action_behaviour` gates a whole attached
+tool, not a specific GraphQL operation inside a call to that tool — there's no
+way for the platform to tell "this call is a read" from "this call is a
+mutation" when both go through the same "make an authorized request" action.
+So no matter how this agent gets composed in — subagent hand-off, or copying
+its tool onto our orchestrator directly — the model remains equally free to
+run `mutation { issueCreate(...) }` through it with zero approval gate, which
+silently breaks the orchestrator's first hard rule ("nothing written without
+approval, no exceptions") regardless of what the orchestrator's own prompt
+says. Editing the existing tool to `always-ask` doesn't fix this either — it
+just moves the friction onto reads instead, which were supposed to be free.
+This is a structural property of a generic single-tool wrapper, not something
+prompt wording could patch around.
+
+(This is a related but distinct question from the remote-MCP one below:
+Linear's actual remote MCP server exposes many genuinely distinct, separately-
+named tools — `list_issues`, `save_issue`, `save_comment`, etc. — not one
+generic passthrough, so it may still turn out to support per-tool
+`action_behaviour` where this homegrown agent structurally cannot. The
+dashboard check below is still worth doing for that reason.)
+
+**Decision:** don't reuse "Linear Assistant" live. Build the dedicated,
+individually-gated tools as planned, but write them using the GraphQL patterns
+above as a tested starting point instead of rediscovering them — real time
+saved, since those specific gotchas (`teamId` requirement, connection/`nodes`
+pagination, priority integer mapping, key-to-UUID resolution before mutating)
+would otherwise be exactly the kind of thing you only learn by hitting the API
+and reading the error. Worth a quick separate check: this tool authenticates
+with a Linear **API key** (shared credential, all actions attributed to one
+key), while the project also has a proper OAuth-connected `linear` account —
+OAuth ties each action to a real identity in Linear's own audit log, which is
+probably the better choice for a production write path; flagging as a
+decision, not assuming it.
+
 ### Open question first: remote MCP vs. custom tools
 
 Linear ships its own official hosted remote MCP server
