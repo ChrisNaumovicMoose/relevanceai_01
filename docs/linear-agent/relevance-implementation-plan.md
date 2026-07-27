@@ -1,6 +1,6 @@
-# Implementing orchestrator-prompt-v2.md (v2.1) in Relevance AI
+# Implementing orchestrator-prompt-v2.md (v2.2) in Relevance AI
 
-How to turn the v2.1 prompt into a running Relevance agent, mapped onto
+How to turn the v2.2 prompt into a running Relevance agent, mapped onto
 Relevance's actual primitives (agents, tools, evals, knowledge, triggers).
 Grounded in the two prior critiques — in particular, this plan is where
 Finding 2 ("policy where mechanism belongs") and Finding 8 ("no feedback
@@ -25,7 +25,7 @@ guidance is explicit: use agents for distinct reasoning roles, tools for
 integrations, and a graph when steps need genuine separation (different
 prompts, different evals, no back-and-forth between them).
 
-v2.1's flow — search, draft, converse with the user about edits, commit — is
+v2.2's flow — search, draft, converse with the user about edits, commit — is
 **one continuous conversation**, not distinct roles. A workforce would force
 that conversation through rigid handover edges, which reintroduces the exact
 problem Finding 1 raised against v1: a workflow's rigidity applied somewhere
@@ -43,7 +43,7 @@ protect.
 ## Tool surface — the actual enforcement layer
 
 Per Finding 2: least-privilege tool scoping is the mechanism-level version of
-several v1/v2.1 prose rules. Build these as custom tools (Settings →
+several v1/v2.2 prose rules. Build these as custom tools (Settings →
 `relevance_create_tool` / `relevance_create_tool_from_transformation`, backed
 by Linear's GraphQL API using the connected `linear` OAuth account, not a
 pasted API key):
@@ -70,10 +70,10 @@ Anthropic guidance on agent-computer interface treats the tool surface as the
 primary lever, and a redundant prose rule just spends attention budget for no
 additional safety.
 
-`always-ask` is the correct blunt default for launch (matches v2.1's
+`always-ask` is the correct blunt default for launch (matches v2.2's
 "nothing written without approval, no exceptions"). `relevance_update_agent_action`
 also exposes `conditional_approval_rules` per attached tool — worth returning
-to once there's usage data, to encode v2.1's size-scaled ceremony (e.g.
+to once there's usage data, to encode v2.2's size-scaled ceremony (e.g.
 auto-approve a single-issue create under some condition, always ask above it)
 as platform config rather than prompt instruction. Not needed for the MVP;
 don't add it speculatively (Gall's Law — evolve toward it once real drafts
@@ -82,7 +82,7 @@ show the pattern is safe).
 ## Agent settings beyond the prompt
 
 - **`thinking_tool: { enabled: true }`** — gives the agent a real scratchpad
-  for the "self-check before showing any draft" step in v2.1 (verify every
+  for the "self-check before showing any draft" step in v2.2 (verify every
   Decide ticket has a decider, every dependency resolves, nothing duplicates
   a cited issue, nothing's invented). This replaces v1's internal JSON
   reasoning schema with the platform's actual mechanism for hidden
@@ -92,11 +92,11 @@ show the pattern is safe).
   runaway tool-call loops within a single turn and forces a check-in rather
   than silently running long. Direct mitigation for the "no mid-commit
   failure handling" gap identified in the first-pass critique.
-- **Memory: skip for the MVP.** Nothing in v2.1 requires persistence across
+- **Memory: skip for the MVP.** Nothing in v2.2 requires persistence across
   conversations yet. Adding it now would be exactly the kind of complexity
   Gall's Law says to defer until a concrete need shows up (e.g., "remember
   this requester's usual project" after real usage shows it'd help).
-- **Knowledge set for the "Workspace notes" appendix.** v2.1 already
+- **Knowledge set for the "Workspace notes" appendix.** v2.2 already
   marks that section "edit this section as the workspace evolves" — put it
   in a Relevance Knowledge Set instead of the system prompt. This is the
   platform-native version of the shearing-layers separation from the
@@ -110,17 +110,17 @@ show the pattern is safe).
 Two-pass, per the platform's own requirement (action IDs don't exist until
 tools are attached):
 
-1. Create the agent (`relevance_create_agent`) with v2.1's prose as a draft,
+1. Create the agent (`relevance_create_agent`) with v2.2's prose as a draft,
    tool-reference lines left as plain text.
 2. Attach the built tools (`relevance_attach_tools_to_agent`), fetch their
    `action_id`s (`relevance_get_agent_tools`), then edit the prompt
    (`relevance_edit_agent_system_prompt`) to weave `{{_actions.<id>}}` pills
-   inline at each decision point — e.g., where v2.1 says "search Linear before
+   inline at each decision point — e.g., where v2.2 says "search Linear before
    drafting" and "only after explicit approval... create the parent, then
    children." Inline pills give the model a real tool-selection cue; prose
    like "use the search tool" doesn't.
 
-No other prompt changes are needed — v2.1's structure (hard rules first,
+No other prompt changes are needed — v2.2's structure (hard rules first,
 answer/small-ticket/package routing, archetype escape valve, self-check,
 assumptions-first review card) carries over directly.
 
@@ -165,6 +165,31 @@ systems-engineering review: a sustained near-zero edit rate at review is a
 signal the human gate has gone ceremonial, not that the agent has gotten
 better.
 
+## Surface-dependent UX enhancements (revisit once the chat surface is chosen)
+
+Two ideas from reviewing a comparable Moose chat-agent prompt (see
+`lessons-from-moose-ai-challenge-prompt.md`) are worth having but only pay off
+on a surface that supports them — not needed for the MVP, but worth deciding
+alongside the chat-surface choice below rather than forgetting about them:
+
+- **A hidden commit-success marker.** v2.2's "Committing to Linear" section
+  now says to use one "if the surface can carry a hidden, structured marker."
+  Concretely, that would look like an HTML comment appended only in the reply
+  immediately after a confirmed successful write, e.g.
+  `<!--committed:{"package":"Exclude held stock from availability","issues":["OSSS-142","OSSS-143","OSSS-144"]}-->`
+  — invisible in any renderer that turns markdown into HTML, and a hard signal
+  a wrapping app or a Teams/Slack integration could key off (post a
+  notification, update a tracker, disable a "commit" button). It also gives
+  the eval system something cheap and mechanical to check: a test scenario
+  can assert the marker never appears unless the create-issue tool actually
+  ran and returned success first.
+- **Quick-reply buttons on the review card's decision** ("create these /
+  change something / drop an item / cancel") instead of typed free text —
+  lower friction on the single highest-value interaction, the approval gate.
+  Needs button/quick-reply support on the target surface (Slack Block Kit,
+  Teams adaptive cards, or a custom UI); the native Relevance chat page is the
+  one candidate surface unlikely to support this out of the box.
+
 ## Chat interface
 
 Every Relevance agent already has a native hosted chat page (shareable link,
@@ -183,7 +208,7 @@ connecting first.)
 1. Confirm the Linear OAuth account's scopes cover read + issue/comment/relation
    create — and deliberately do **not** request team/workflow-admin scopes.
 2. Build the eight custom Linear tools listed above as drafts.
-3. Create the agent with the v2.1 prompt as a draft.
+3. Create the agent with the v2.2 prompt as a draft.
 4. Attach tools with the action_behaviour split above; enable `thinking_tool`;
    set an `autonomy_limit`.
 5. Weave `{{_actions.<id>}}` pills into the prompt (pass 2).
