@@ -182,9 +182,11 @@
 
 ---
 
-## Step 3: Set Up Observability & Logging
+## Step 3: Set Up Observability & Logging — DEFERRED TO PHASE 1.5+
 
-### 3a. Create Logging Sink
+**Status:** ⏸️ Parked after agent is live in SHORTLIST-only mode (1–2 weeks into Phase 1)
+
+### 3a. Create Logging Sink (Phase 1.5, after agent is live)
 - [ ] Choose destination: Snowflake table, cloud storage (S3/GCS), or observability platform
 - [ ] Create table: `tbl_customer_name_resolution_logs` with columns:
   ```sql

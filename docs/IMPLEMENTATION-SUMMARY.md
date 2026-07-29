@@ -138,12 +138,25 @@ Handles human-in-the-loop & policy decisions:
    - Update prompt with real `action_id`
    - Test draft mode (SHORTLIST output)
 
-### Week 3+ (Days 13+)
-7. **Set up observability** (logging, dashboard, alerts)
-8. **Phase 1 production rollout** (SHORTLIST-only; 30–90 days)
-9. **Collect telemetry** & validate success criteria
-10. **Phase 2 rollout** (when Phase 1 success criteria met)
-11. **Ongoing tuning** (monthly weights, quarterly reviews)
+### Week 2–3 (Days 10–14)
+7. **Phase 1 Production Rollout** (SHORTLIST-only mode; live)
+   - Deploy agent to production
+   - Test with real operators
+   - Verify decision accuracy (manual checks)
+
+### Week 3–4 (Phase 1.5, Days 15–28) — OBSERVABILITY SETUP
+8. **Set up logging infrastructure** (after agent is live & stable)
+   - Create Snowflake logging table
+   - Create logging tool
+   - Integrate logging into agent
+9. **Create KPI dashboard** (from Phase 1.5+ logs)
+10. **Set up alerts** (precision, hard block rate)
+
+### Weeks 5+ (Phase 1 & Phase 2 Preparation)
+11. **Collect telemetry** (30–90 days of Phase 1.5+ logs)
+12. **Validate Phase 1 success criteria**
+13. **Phase 2 rollout** (when Phase 1 success criteria met)
+14. **Ongoing tuning** (monthly weights, quarterly reviews)
 
 ---
 

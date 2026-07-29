@@ -373,9 +373,11 @@ If token overlap = 0 (completely different names):
 
 ---
 
-## Observability & Telemetry
+## Observability & Telemetry (Deferred to Phase 1.5+)
 
-### Mandatory Logging (Every Resolution Attempt)
+### Mandatory Logging (Every Resolution Attempt) — PARKED FOR PHASE 1.5+
+
+**Status:** Defer comprehensive logging until Scoring Tool + Agent are live and stable (Week 3+).
 
 ```json
 {

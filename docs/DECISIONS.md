@@ -117,19 +117,79 @@ No curated alias table available; defer to Phase 2+ when table is prepared from 
 
 ---
 
-## Summary: Phase 1 Simplified Scope
+---
 
-| Feature | Phase 1 | Phase 2+ |
-| --- | --- | --- |
-| **Language Mappings** | ❌ Skipped | ✅ Add based on telemetry |
-| **S_alias Signal** | ❌ Skipped (= 0.0 always) | ✅ Add with curated table |
-| **Phonetic Matching** | ✅ Full (SOUNDEX) | ✅ Keep + DoubleMetaphone option |
-| **Auto-Resolve** | ❌ SHORTLIST only | ✅ Enable for context + history + phonetic |
-| **Observability** | ✅ Full logging | ✅ Enhanced KPIs |
+## Decision 4: Mandatory Logging (Audit Trail & Telemetry) — PARKED FOR PHASE 1.5+
 
-**Phase 1 Signals (6 of 7):**
-- ✅ S_token, S_phonetic, S_sim, S_edit, S_context, S_history
-- ❌ S_alias (deferred)
+**Date:** July 29, 2026  
+**Status:** ✅ **APPROVED** — Parked/Deferred  
+**Scope:** Affects: Observability infrastructure, KPI dashboard, alert configuration  
+
+### Decision
+**Defer comprehensive mandatory logging (every resolution attempt) until Scoring Tool + Agent are live and stable.**
+
+### Rationale
+1. **Core system first** — Get scoring + resolution logic working before adding logging infrastructure
+2. **Reduced Phase 1 complexity** — No need to build logging infrastructure during agent setup
+3. **Simpler testing** — Test resolution accuracy first; logging can be added without changing resolution logic
+4. **Phase 1.5 implementation** — After agent is live in SHORTLIST-only mode (1–2 weeks), add logging
+
+### Phase 1 Approach (Minimal, Deferred)
+- ✅ Agent **does NOT** log every resolution attempt
+- ✅ Agent **does NOT** write to Snowflake logging table
+- ✅ Agent **does NOT** track operator overrides
+- ❌ No telemetry collection during Phase 1
+- ❌ No daily KPI dashboard
+- ❌ No precision alerts
+
+### Phase 1.5 Approach (After Agent is Live)
+- ✅ Create `tbl_customer_resolution_logs` Snowflake table
+- ✅ Create Logging Tool in Relevance AI
+- ✅ Integrate logging into agent (one-time update)
+- ✅ Collect 30–90 days of telemetry for Phase 2 tuning
+- ✅ Build KPI dashboard
+- ✅ Set up precision/hard-block alerts
+
+### Phase 2+ Approach
+- ✅ Use Phase 1 override telemetry to tune weights
+- ✅ Build alias table from operator override patterns
+- ✅ Enhanced analytics (deep-dive on false positives)
+
+### Impact
+- **Phase 1 (Weeks 1–2):** Build Scoring Tool + Agent. No logging overhead.
+- **Phase 1.5 (Week 3–4):** Add logging infrastructure. Agent already live and stable.
+- **Phase 2+ (Month 2+):** Use logs to inform tuning decisions.
+
+### Files Affected
+- ✅ LOGGING-OBSERVABILITY-GUIDE.md — Mark as Phase 1.5+
+- ✅ Implementation checklist — Move logging to "Step 3.5" (after agent is live)
+- ✅ IMPLEMENTATION-SUMMARY.md — Clarify logging is deferred
+- ✅ DECISIONS.md — Document this decision
+
+---
+
+## Summary: Phase 1 Simplified Scope (Final)
+
+| Feature | Phase 1 | Phase 1.5 | Phase 2+ |
+| --- | --- | --- | --- |
+| **Language Mappings** | ❌ | ❌ | ✅ Add |
+| **S_alias Signal** | ❌ | ❌ | ✅ Add |
+| **Mandatory Logging** | ❌ | ✅ Add | ✅ Enhanced |
+| **Phonetic Matching** | ✅ SOUNDEX | ✅ Keep | ✅ +DoubleMetaphone |
+| **Auto-Resolve** | ❌ SHORTLIST | ❌ SHORTLIST | ✅ Enable |
+| **KPI Dashboard** | ❌ | ✅ Build | ✅ Enhanced |
+
+**Phase 1 Implementation (Weeks 1–2):**
+- ✅ Scoring Tool (6 signals, Snowflake SQL)
+- ✅ Agent Prompt (decision orchestration)
+- ✅ Agent + Tool integration
+- ❌ Logging infrastructure (deferred to Phase 1.5)
+
+**Phase 1 Testing:**
+- ✅ Scoring accuracy (manual spot-checks)
+- ✅ Agent decision rules (SHORTLIST-only)
+- ✅ Operator UX (SHORTLIST presentation)
+- ❌ Telemetry (deferred; not needed for Phase 1 testing)
 
 ---
 

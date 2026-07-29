@@ -1,8 +1,9 @@
 # Mandatory Logging & Observability Guide
-## Customer Name Resolution Strategy — Implementation
+## Customer Name Resolution Strategy — Implementation (Phase 1.5+)
 
 **Date:** July 29, 2026  
-**Status:** Implementation specification  
+**Status:** ⏸️ **DEFERRED to Phase 1.5+** (after Scoring Tool + Agent are live)
+**Target Implementation:** Week 3–4 of Phase 1 rollout  
 
 ---
 
