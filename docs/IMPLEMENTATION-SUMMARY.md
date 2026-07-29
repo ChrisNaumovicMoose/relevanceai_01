@@ -15,10 +15,10 @@ You now have **three complete, production-ready documents** that specify how to 
 **810 lines of comprehensive specification covering:**
 
 - **Problem & Solution** — Why semantic-first matching works better than naive string similarity
-- **7-Signal Scoring Architecture**
+- **6-Signal Scoring Architecture (Phase 1)** — *Alias deferred to Phase 2+*
   - Tier 1 (Semantic): Token overlap (35%), Phonetic matching (25%)
   - Tier 2 (Fallback): Jaro-Winkler (10%), Edit distance (5%)
-  - Tier 3 (Validation): Context/region (15%), Sales history (5%), Alias (5%)
+  - Tier 3 (Validation): Context/region (15%), Sales history (5%)
 - **Preprocessing/Normalization** — 6-step pipeline to handle diacritics, legal suffixes, language variants, tokenization
 - **Decision Rules (Deterministic)**
   - AUTO_RESOLVED: score ≥ 0.92 + corroborator + no ties → instant resolution

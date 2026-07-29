@@ -47,15 +47,25 @@ When resolving a free-text customer name (e.g., *"la crote angalais"*) to a JDE 
 5. **S_context (15%)** — Region/branch/order-company match
    - Exact region: 1.0 | Country-level: 0.5 | Mismatch: 0.0
 6. **S_history (5%)** — Customer sales recency/frequency (orders in past 730 days, capped at 1.0)
-7. **S_alias (5%)** — Exact curated alias match (binary: 0 or 1)
+7. **S_alias (PHASE 2+, deferred)** — Exact curated alias match (binary: 0 or 1)
+   - **Phase 1:** Set to 0.0 always (alias table not prepared)
 
 ### Combined Score Formula
 
+**Phase 1 (without S_alias):**
+```
+combined_score = 0.35*S_token + 0.25*S_phonetic + 0.10*S_sim + 0.05*S_edit 
+                 + 0.15*S_context + 0.05*S_history + 0.0*S_alias
+
+Effective: 0.35*S_token + 0.25*S_phonetic + 0.10*S_sim + 0.05*S_edit + 0.15*S_context + 0.05*S_history
+
+Range: [0, 1]  where 1 = perfect match with all signals aligned
+```
+
+**Phase 2+ (with S_alias table):**
 ```
 combined_score = 0.35*S_token + 0.25*S_phonetic + 0.10*S_sim + 0.05*S_edit 
                  + 0.15*S_context + 0.05*S_history + 0.05*S_alias
-
-Range: [0, 1]  where 1 = perfect match with all signals aligned
 ```
 
 ### Preprocessing / Normalization (Must Run Before Scoring)
@@ -106,11 +116,11 @@ Applied to both input and candidate names in identical order:
 
 **Activation Conditions (ALL must be true):**
 1. `combined_score >= AUTO_THRESH_HIGH` (default: 0.92)
-2. **At least ONE corroborator:**
+2. **At least ONE corroborator (Phase 1):**
    - `S_context >= 0.75` (exact region match), OR
    - `S_history >= 0.50` (established customer, 10+ orders in 730d), OR
-   - `S_alias = 1` (exact curated alias), OR
    - `S_phonetic >= 0.75` (strong phonetic agreement across tokens)
+   - **Phase 2+:** Also accept `S_alias = 1` (exact curated alias)
 3. **No competitor within `delta_competitor`** (default: 0.05)
    - No other candidate has `combined_score >= (top_score - 0.05)`
 4. **Non-null provenance:**

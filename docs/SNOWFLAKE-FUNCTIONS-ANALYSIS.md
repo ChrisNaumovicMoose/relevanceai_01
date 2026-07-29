@@ -422,11 +422,20 @@ GROUP BY ab.address_number, ab.customer_name
 
 ---
 
-### Signal 7: S_alias (Curated Alias Lookup)
+### Signal 7: S_alias (Curated Alias Lookup) — PHASE 2+ FEATURE
 
-**Requirement:** Exact match against alias table; binary 0 or 1
+**Phase 1 Approach:** Skip entirely. Set S_alias = 0.0 always.
 
-**Snowflake Approach:**
+```sql
+SELECT
+  candidate.address_number,
+  candidate.customer_name,
+  0.0 AS S_alias  -- Phase 1: Always 0 (no alias table)
+FROM dim_jde_address_book candidate
+;
+```
+
+**Phase 2+ Approach:** Exact match against alias table; binary 0 or 1
 
 ```sql
 SELECT
@@ -442,12 +451,12 @@ LEFT JOIN tbl_customer_aliases alias_table
 ;
 ```
 
-**Snowflake Functions:**
+**Snowflake Functions (Phase 2+):**
 - **`LEFT JOIN`** — Outer join; preserve all candidates
 - **`IS NOT NULL`** — Check if joined row exists
 - **`CASE ... WHEN ... THEN ... END`** — Conditional logic
 
-**Table Structure: `tbl_customer_aliases`**
+**Table Structure (Phase 2+): `tbl_customer_aliases`**
 ```sql
 CREATE TABLE tbl_customer_aliases (
   canonical_name STRING,      -- Canonical/normalized name
@@ -463,7 +472,8 @@ CREATE TABLE tbl_customer_aliases (
 -- AMAZON | AMAZONE | 54321
 ```
 
-**Recommendation for Phase 1:** Use LEFT JOIN with simple equality check. Consider indexing `tbl_customer_aliases.alias_variant`. **Latency: < 1ms per candidate with index.**
+**Phase 1 Recommendation:** Skip S_alias entirely. Remove from combined score calculation.
+**Phase 2+ Recommendation:** Use LEFT JOIN with simple equality check. Index `tbl_customer_aliases.alias_variant` for <1ms lookup.
 
 ---
 
@@ -719,8 +729,8 @@ signals AS (
     -- S_history: Order Count (pre-computed lookup)
     COALESCE(history.S_history, 0.0) AS S_history,
     
-    -- S_alias: Alias Lookup
-    CASE WHEN alias.canonical_name IS NOT NULL THEN 1.0 ELSE 0.0 END AS S_alias,
+    -- S_alias: Alias Lookup (PHASE 2+, deferred) — Phase 1: always 0
+    0.0 AS S_alias,
     
     -- Provenance
     candidates.order_company,
@@ -799,7 +809,7 @@ LIMIT @max_candidates
 | **S_edit** | `EDITDISTANCE()`, `LENGTH()` | ✅ Native | Phase 1 |
 | **S_context** | `CASE`, `LEFT()`, `=` | ✅ Native | Phase 1 |
 | **S_history** | `COUNT()`, `CURRENT_DATE`, `LEFT JOIN` | ✅ Native | Phase 1 |
-| **S_alias** | `LEFT JOIN`, `IS NOT NULL`, `CASE` | ✅ Native | Phase 1 |
+| **S_alias** | (Deferred to Phase 2+) | ⚠️ Phase 2+ | Phase 2+ |
 | **Combined Score** | Arithmetic (+, -, *, /) | ✅ Native | Phase 1 |
 | **S_embed** | (Python UDF or external service) | ⚠️ Deferred | Phase 2+ |
 | **Language Mappings** | `CASE` (simple) or mapping table | ⚠️ Deferred | Phase 2+ |

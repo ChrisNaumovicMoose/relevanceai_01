@@ -81,17 +81,19 @@
   - [ ] Cap at 20 (tuning constant): `MIN(count, 20) / 20`
 - [ ] Result: 0–1 float
 
-**S_alias (Curated Alias Lookup):**
-- [ ] Create/reference table: `tbl_customer_aliases` (columns: canonical_name, alias_variant, address_number)
-- [ ] Exact match lookup: if normalized_input matches any alias_variant, S_alias = 1.0
-- [ ] Otherwise: 0.0
-- [ ] Result: binary (0 or 1)
+**S_alias (Curated Alias Lookup) — PARKED FOR PHASE 2+**
+- [ ] **SKIPPED FOR PHASE 1** — No alias table available
+- [ ] Phase 2+: Create/reference table: `tbl_customer_aliases` (columns: canonical_name, alias_variant, address_number)
+- [ ] Phase 2+: Exact match lookup: if normalized_input matches any alias_variant, S_alias = 1.0
+- [ ] Phase 2+: Otherwise: 0.0
+- [ ] Phase 1: Set S_alias = 0.0 always (remove from combined score calculation)
 
 ### 1d. Implement Combined Score Formula
 
-- [ ] `combined_score = 0.35*S_token + 0.25*S_phonetic + 0.10*S_sim + 0.05*S_edit + 0.15*S_context + 0.05*S_history + 0.05*S_alias`
+**Phase 1 (without S_alias):**
+- [ ] `combined_score = 0.35*S_token + 0.25*S_phonetic + 0.10*S_sim + 0.05*S_edit + 0.15*S_context + 0.05*S_history`
 - [ ] Clamp to [0, 1]
-- [ ] Return per-candidate: combined_score + all 7 signals
+- [ ] Return per-candidate: combined_score + all 6 signals (S_alias = 0.0 always)
 
 ### 1e. Implement Candidate Ranking & Output
 
