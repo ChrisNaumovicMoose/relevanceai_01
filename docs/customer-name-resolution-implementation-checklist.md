@@ -33,14 +33,14 @@
 - [ ] Unicode/diacritics removal (NFKD normalize, strip diacritics → ASCII)
 - [ ] Uppercase + trim + punctuation cleanup
 - [ ] Legal suffix removal (S.A., LTD, SAS, PLC, Inc., Ltd., Corp., etc.)
-- [ ] Language-specific mappings (configurable lookup table):
-  - [ ] ANGALAIS → INGLES
-  - [ ] ANGLAIS → INGLES
-  - [ ] CROTE → CORTE
-  - [ ] FRANCAIS → FRANCES
-  - [ ] (Add domain-specific variants as needed)
 - [ ] Tokenization (split on spaces, remove stopwords: THE, A, AN, &)
 - [ ] Output: Normalized string + token array
+
+**PARKED FOR PHASE 2+:**
+- [ ] Language-specific mappings (configurable lookup table) — **DEFERRED**
+  - Would include: ANGALAIS → INGLES, ANGLAIS → INGLES, CROTE → CORTE, FRANCAIS → FRANCES, etc.
+  - Phase 1 relies on phonetic matching to handle variants instead
+  - Can add mapping table in Phase 2 based on operator override patterns from Phase 1 data
 
 ### 1c. Implement Signal Computations
 

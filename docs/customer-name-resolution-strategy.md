@@ -74,11 +74,11 @@ Applied to both input and candidate names in identical order:
    - Strip trailing: S.A., S A, S.A.R.L, SARL, S.L., LTD, SAS, PLC, Inc., Ltd., Corp., etc.
    - Example: "ACME Corp S.A." → "ACME CORP"
 
-4. **Language-Specific Mappings** (Configurable Lookup Table)
-   - Apply bidirectional or unidirectional variant mappings
-   - Example: `ANGALAIS → INGLES` (Spanish variant to canonical)
-   - Example: `CROTE → CORTE` (typo to correct)
-   - **Editable via config** for domain and regional adjustments
+4. **Language-Specific Mappings** (Configurable Lookup Table) — **PARKED FOR PHASE 2+**
+   - *Deferred:* Would apply bidirectional or unidirectional variant mappings
+   - *Phase 1 approach:* Phonetic matching (SOUNDEX) handles variant detection instead
+   - Phase 2+ will add curated mappings based on Phase 1 operator override telemetry
+   - Examples (to be implemented later): `ANGALAIS → INGLES`, `CROTE → CORTE`
 
 5. **Tokenization**
    - Split on spaces, remove common stopwords (THE, A, AN, &), normalize legal suffix tokens to empty
@@ -245,14 +245,16 @@ When multiple candidates score similarly, apply this priority order (no randomne
 - Surface as separate `DATA_QUALITY` flag with raw address-book row for triage
 - Track proportion of NULL names; escalate cleanup if > 2% of address book
 
-### Language-Specific Mappings (Configurable)
+### Language-Specific Mappings (Configurable) — **PARKED FOR PHASE 2+**
 
-Build a curated mapping table for:
+**Deferred feature.** Phase 1 uses phonetic matching (SOUNDEX) instead.
+
+In Phase 2+, build a curated mapping table for:
 - Common misspellings (CROTE → CORTE)
 - Language variants (ANGALAIS → INGLES, ANGLAIS → ENGLISH)
 - Regional aliases (common brand synonyms)
 
-**Example Config:**
+**Example Config (for Phase 2+):**
 ```json
 "language_mappings": {
   "ANGALAIS": "INGLES",
@@ -263,7 +265,7 @@ Build a curated mapping table for:
 }
 ```
 
-This mapping is **auditable and version-controlled**, allowing domain experts to tune over time.
+This mapping will be **auditable and version-controlled**, allowing domain experts to tune over time based on Phase 1 override telemetry.
 
 ### Embedding-Based Fallback (Optional, Future)
 

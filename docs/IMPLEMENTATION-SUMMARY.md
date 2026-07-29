@@ -200,7 +200,7 @@ A: Tie-breaking logic handles it. If scores are within 0.05 (delta_competitor), 
 A: Yes! All weights are parameters. After Phase 1 telemetry, re-weight based on override patterns. Example: if phonetic-only matches have high precision, upgrade S_phonetic from 0.25 → 0.30.
 
 **Q: What about new languages or regions?**  
-A: Add language-specific mappings to the configurable lookup table (e.g., Italian variants, German company suffixes). No code changes needed.
+A: **Phase 1** uses phonetic matching (SOUNDEX) to handle variants. **Phase 2+** will add language-specific mappings to the configurable lookup table based on Phase 1 operator override telemetry (e.g., Italian variants, German company suffixes). No code changes needed when adding mappings.
 
 **Q: How do I integrate with my stock-availability agent?**  
 A: Call this customer-name-resolution agent as a sub-step in your stock-availability workflow. It returns (address_number, confidence, signals). Use address_number for inventory lookup.
